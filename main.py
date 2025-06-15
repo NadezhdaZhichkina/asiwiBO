@@ -36,28 +36,25 @@ def save_case():
 
 @app.route("/case", methods=["GET"])
 def find_case():
-    question = request.args.get("question", "").lower()
-    document_type = request.args.get("document_type", "").lower()
+    question = request.args.get("question", "").strip().lower()
     if not question:
         return jsonify({"error": "Missing question"}), 400
+
     sheet = get_sheet()
     all_rows = sheet.get_all_records()
-    best_match = None
-    best_ratio = 0
+    matches = []
+
     for row in all_rows:
-        if document_type and row.get("document_type", "").lower() != document_type:
-            continue
-        q = row.get("question", "").lower()
+        q = row.get("question", "")
         if not q:
             continue
-        ratio = SequenceMatcher(None, question, q).ratio()
-        if ratio > best_ratio:
-            best_ratio = ratio
-            best_match = row
-    return jsonify({
-        "match_ratio": round(best_ratio, 2),
-        "matched_case": best_match
-    })
+        ratio = SequenceMatcher(None, question, q.lower()).ratio()
+        if ratio >= 0.6:
+            row["match_ratio"] = round(ratio, 2)
+            matches.append(row)
+
+    matches.sort(key=lambda x: x["match_ratio"], reverse=True)
+    return jsonify({"matches": matches})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
