@@ -59,11 +59,5 @@ def find_case():
         "matched_case": best_match
     })
 
-@app.route("/cases", methods=["GET"])
-def all_cases():
-    sheet = get_sheet()
-    rows = sheet.get_all_records()
-    return jsonify(rows)
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
