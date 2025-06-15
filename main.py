@@ -26,16 +26,18 @@ def save_case():
     user = data.get("user")
     situation = data.get("situation")
     solution = data.get("solution")
+    document_type = data.get("document_type", "")
     tags = data.get("tags", "")
     if not (user and situation and solution):
         return jsonify({"error": "Missing fields"}), 400
     sheet = get_sheet()
-    sheet.append_row([datetime.now().isoformat(), user, situation, solution, tags])
+    sheet.append_row([datetime.now().isoformat(), user, situation, solution, document_type, tags])
     return jsonify({"status": "saved"}), 200
 
 @app.route("/case", methods=["GET"])
 def find_case():
     situation = request.args.get("situation", "").lower()
+    doc_type_filter = request.args.get("document_type", "").lower()
     if not situation:
         return jsonify({"error": "Missing situation"}), 400
     sheet = get_sheet()
@@ -44,6 +46,9 @@ def find_case():
     best_ratio = 0
     for row in all_rows:
         s = row.get("situation", "").lower()
+        dt = row.get("document_type", "").lower()
+        if doc_type_filter and doc_type_filter != dt:
+            continue
         if not s:
             continue
         ratio = SequenceMatcher(None, situation, s).ratio()
