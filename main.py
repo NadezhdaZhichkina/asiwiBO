@@ -1,8 +1,8 @@
-
 from flask import Flask, request, jsonify
 import json, os, gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from difflib import SequenceMatcher
 
 app = Flask(__name__)
 
@@ -42,18 +42,22 @@ def find_case():
     all_rows = sheet.get_all_records()
     best_match = None
     best_ratio = 0
+
     for row in all_rows:
         s = row.get("situation", "").lower()
         if not s:
             continue
-        ratio = sum([1 for a, b in zip(situation, s) if a == b]) / max(len(s), 1)
+        ratio = SequenceMatcher(None, situation, s).ratio()
         if ratio > best_ratio:
             best_ratio = ratio
             best_match = row
+
     return jsonify({
         "match_ratio": round(best_ratio, 2),
-        "matched_case": best_match
+        "matched_case": best_match,
+        "total_cases": len(all_rows)
     })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
