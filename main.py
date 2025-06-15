@@ -24,20 +24,20 @@ def index():
 def save_case():
     data = request.get_json()
     user = data.get("user")
+    document_type = data.get("document_type", "")
     situation = data.get("situation")
     solution = data.get("solution")
-    document_type = data.get("document_type", "")
     tags = data.get("tags", "")
     if not (user and situation and solution):
         return jsonify({"error": "Missing fields"}), 400
     sheet = get_sheet()
-    sheet.append_row([datetime.now().isoformat(), user, situation, solution, document_type, tags])
+    sheet.append_row([datetime.now().isoformat(), user, document_type, situation, solution, tags])
     return jsonify({"status": "saved"}), 200
 
 @app.route("/case", methods=["GET"])
 def find_case():
     situation = request.args.get("situation", "").lower()
-    doc_type_filter = request.args.get("document_type", "").lower()
+    document_type = request.args.get("document_type", "").lower()
     if not situation:
         return jsonify({"error": "Missing situation"}), 400
     sheet = get_sheet()
@@ -45,10 +45,9 @@ def find_case():
     best_match = None
     best_ratio = 0
     for row in all_rows:
-        s = row.get("situation", "").lower()
-        dt = row.get("document_type", "").lower()
-        if doc_type_filter and doc_type_filter != dt:
+        if document_type and row.get("document_type", "").lower() != document_type:
             continue
+        s = row.get("situation", "").lower()
         if not s:
             continue
         ratio = SequenceMatcher(None, situation, s).ratio()
@@ -62,10 +61,10 @@ def find_case():
     })
 
 @app.route("/cases", methods=["GET"])
-def list_cases():
+def all_cases():
     sheet = get_sheet()
-    all_rows = sheet.get_all_records()
-    return jsonify(all_rows), 200
+    rows = sheet.get_all_records()
+    return jsonify(rows)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
