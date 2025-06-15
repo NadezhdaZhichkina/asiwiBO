@@ -42,7 +42,6 @@ def find_case():
     all_rows = sheet.get_all_records()
     best_match = None
     best_ratio = 0
-
     for row in all_rows:
         s = row.get("situation", "").lower()
         if not s:
@@ -51,13 +50,17 @@ def find_case():
         if ratio > best_ratio:
             best_ratio = ratio
             best_match = row
-
     return jsonify({
         "match_ratio": round(best_ratio, 2),
         "matched_case": best_match,
         "total_cases": len(all_rows)
     })
 
+@app.route("/cases", methods=["GET"])
+def list_cases():
+    sheet = get_sheet()
+    all_rows = sheet.get_all_records()
+    return jsonify(all_rows), 200
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
